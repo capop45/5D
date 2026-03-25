@@ -5,7 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Integração: Sienge x Prevision x BIM</title>
     <style>
+        /* TEMA ESCURO (Padrão) */
         :root {
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --success: #22c55e;
+            --success-bg: rgba(34, 197, 94, 0.15);
+            --danger: #ef4444;
+            --danger-hover: #f87171;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --input-bg: #0f172a;
+            --btn-action-hover: #334155;
+            --dragging-bg: #0f172a;
+        }
+
+        /* TEMA CLARO */
+        [data-theme="light"] {
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --success: #16a34a;
@@ -17,11 +36,15 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border: #e2e8f0;
+            --input-bg: #ffffff;
+            --btn-action-hover: #e2e8f0;
+            --dragging-bg: #f1f5f9;
         }
 
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
@@ -35,11 +58,39 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
+        }
+
+        /* Botão de Tema */
+        .theme-toggle-wrapper {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .btn-theme {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 99px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-theme:hover {
+            border-color: var(--primary);
         }
 
         header {
             text-align: center;
             margin-bottom: 40px;
+            padding-top: 20px;
         }
 
         h1 {
@@ -52,7 +103,7 @@
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin-bottom: 30px;
         }
 
@@ -89,6 +140,15 @@
             .grid {
                 grid-template-columns: 1fr;
             }
+            .theme-toggle-wrapper {
+                position: relative;
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            header {
+                padding-top: 0;
+            }
         }
 
         /* Checklist Cards */
@@ -96,7 +156,7 @@
             background: var(--card-bg);
             border-radius: 12px;
             padding: 25px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         .card h2 {
@@ -132,8 +192,9 @@
         }
 
         .task-item.dragging {
-            opacity: 0.5;
-            background: #e2e8f0;
+            opacity: 0.4;
+            background: var(--dragging-bg);
+            border-style: dashed;
         }
 
         .task-item.completed {
@@ -191,13 +252,13 @@
         }
 
         .btn-action:hover {
-            background: var(--border);
+            background: var(--btn-action-hover);
             color: var(--text-main);
         }
 
         .btn-action.delete:hover {
-            background: #fee2e2;
-            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-hover);
         }
 
         /* Add Task Form */
@@ -212,10 +273,16 @@
         .add-task-input, .edit-task-input {
             flex-grow: 1;
             padding: 8px 12px;
+            background: var(--input-bg);
+            color: var(--text-main);
             border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 0.95rem;
             outline: none;
+        }
+
+        .add-task-input::placeholder {
+            color: var(--text-muted);
         }
 
         .add-task-input:focus, .edit-task-input:focus {
@@ -243,7 +310,7 @@
             color: white;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .roteiro h2 {
@@ -276,6 +343,12 @@
 <body>
 
 <div class="container">
+    <div class="theme-toggle-wrapper">
+        <button class="btn-theme" id="theme-btn" onclick="toggleTheme()">
+            ☀️ Modo Claro
+        </button>
+    </div>
+
     <header>
         <h1>Dashboard de Implementação BIM 4D/5D</h1>
         <p>Acompanhamento de Integração Sienge, Prevision e Geometria 3D</p>
@@ -323,6 +396,37 @@
 </div>
 
 <script>
+    // ==========================================
+    // LÓGICA DE TEMA (DARK/LIGHT MODE)
+    // ==========================================
+    function initTheme() {
+        // Pega o tema salvo ou usa 'dark' como padrão absoluto
+        const savedTheme = localStorage.getItem('app_theme') || 'dark';
+        applyTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        applyTheme(newTheme);
+    }
+
+    function applyTheme(theme) {
+        const themeBtn = document.getElementById('theme-btn');
+        if (theme === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+            themeBtn.innerHTML = '🌙 Modo Escuro';
+            localStorage.setItem('app_theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme'); // Remove o atributo para usar o :root padrão (dark)
+            themeBtn.innerHTML = '☀️ Modo Claro';
+            localStorage.setItem('app_theme', 'dark');
+        }
+    }
+
+    // Inicializa o tema assim que o script carrega
+    initTheme();
+
     // ==========================================
     // CONFIGURAÇÕES DO JSONBIN.IO
     // ==========================================
@@ -586,10 +690,9 @@
     // ==========================================
 
     async function loadData() {
-        if (BIN_ID === 'SEU_BIN_ID_AQUI') {
+        if (!BIN_ID || BIN_ID === 'SEU_BIN_ID_AQUI') {
             statusMsg.innerText = "Modo Local Ativado. Configure BIN_ID e API_KEY no código.";
             statusMsg.style.color = "#eab308";
-            // Força um array vazio para o usuário ver e testar adicionar novos.
             render();
             return;
         }
@@ -618,13 +721,13 @@
         } catch (error) {
             console.error(error);
             statusMsg.innerText = "Erro ao conectar. Usando modo offline temporário.";
-            statusMsg.style.color = "#ef4444";
+            statusMsg.style.color = "var(--danger)";
         }
         render();
     }
 
     async function saveData() {
-        if (BIN_ID === 'SEU_BIN_ID_AQUI') return;
+        if (!BIN_ID || BIN_ID === 'SEU_BIN_ID_AQUI') return;
 
         statusMsg.innerText = "Salvando na nuvem...";
         statusMsg.style.color = "var(--text-muted)";
@@ -648,10 +751,11 @@
         } catch (error) {
             console.error(error);
             statusMsg.innerText = "Erro ao salvar na nuvem.";
-            statusMsg.style.color = "#ef4444";
+            statusMsg.style.color = "var(--danger)";
         }
     }
 
+    // Inicializa a carga dos dados
     window.onload = loadData;
 </script>
 </body>
